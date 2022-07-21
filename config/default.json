@@ -1,0 +1,4 @@
+{
+    "mongoURI" :"mongodb+srv://Fakher:FakherS123@cluster0.x4orxix.mongodb.net/Medioks?retryWrites=true&w=majority",
+    "tokeSecret":"MyToken"
+}
