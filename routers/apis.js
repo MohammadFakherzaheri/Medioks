@@ -304,6 +304,7 @@ router.post("/verifyOtp/:id",
       console.error(err.message);
       res.status(500).send({
         success: false,
+        response:"error",
         errors: [
           {
             msg: "Server error",
@@ -350,9 +351,9 @@ router.put("/resetPassword/:id/:otptoken",
     if (!user) {
       return res.status(400).json({
         success: false,
+        response: "error",
         errors: [
           {
-            status: 0,
             response: "error",
             param: "_id",
             msg: "Something Went Wrong..",
@@ -364,6 +365,7 @@ router.put("/resetPassword/:id/:otptoken",
     if (user.otp_token !== user_otptoken) {
       return res.status(400).json({
         success: false,
+        response: "error",
         errors: [
           {
             response: "error",
@@ -377,12 +379,12 @@ router.put("/resetPassword/:id/:otptoken",
     if (password !== confirm_password) {
       return res.status(400).json({
         success: false,
+        response: "error",
         errors: [
           {
-            status: 0,
-            response: "error",
-            param: "confirm_password",
             msg: "Confirm password does not matched with new password",
+            param: "confirm_password",
+             location: "body",
           },
         ],
       });
@@ -406,16 +408,14 @@ router.put("/resetPassword/:id/:otptoken",
       );
 
       if (personalData) {
-        res.json({
+        res.status(200).json({
           success: true,
-          status: 1,
           response: "successful",
           msg: "Password is updated successfully",
         });
       } else {
-        res.json({
+        res.status(404).json({
           success: false,
-          status: 0,
           response: "error",
           msg: "No record found",
         });
