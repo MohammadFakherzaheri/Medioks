@@ -5,6 +5,9 @@ const SignUpSchema = new mongoose.Schema({
         type:String,
         require:true
     },
+    last_name:{
+        type:String
+    },
     email:{
         type:String,
         require:true,
@@ -32,8 +35,31 @@ const SignUpSchema = new mongoose.Schema({
     },
     otp_token:{
         type:String
+    },
+    contact_no:{
+        type:Number,
+        required:true
+    },
+    date_of_brith:{
+        type:Date,
+        required:true
+    },
+    residence_city:{
+        type:String,
+        required:true
+    },
+    college_name:{
+        type:String,
+        required:true
+    },
+    course_name:{
+        type:String,
+        required:true
+    },
+    course_year:{
+        type:String,
+        required:true
     }
-
    
 });
 
