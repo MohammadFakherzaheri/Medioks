@@ -137,7 +137,7 @@ router.post("/forgotPassword",
   async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({ success: false, errors: errors.array() });
+      return res.status(400).json({ success: false, response:"error", errors: errors.array() });
     }
     const { email } = req.body;
     try {
@@ -222,7 +222,7 @@ router.post("/verifyOtp/:id",
   async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({ success: false, errors: errors.array() });
+      return res.status(400).json({ success: false,response:"error", errors: errors.array() });
     }
 
     const { otp } = req.body;
@@ -258,6 +258,7 @@ router.post("/verifyOtp/:id",
 
             res.json({
               success: true,
+              response:"successful"
               msg: "OTP verified successfully",
               data: {
                 id: user_id,
@@ -267,6 +268,7 @@ router.post("/verifyOtp/:id",
           } else {
             res.status(400).send({
               success: false,
+              response:"error",
               errors: [
                 {
                   msg: "OTP get expired",
@@ -279,6 +281,7 @@ router.post("/verifyOtp/:id",
         } else if (otp != userData.otp) {
           res.status(400).send({
             success: false,
+            response:"error",
             errors: [
               {
                 msg: "OTP is not valid",
@@ -291,6 +294,7 @@ router.post("/verifyOtp/:id",
       } else {
         res.status(400).send({
           success: false,
+          response:"error",
           errors: [
             {
               msg: "No Otp in this id",
@@ -341,7 +345,7 @@ router.put("/resetPassword/:id/:otptoken",
     const errors = validationResult(req);
     var err = [];
     if (!errors.isEmpty()) {
-      return res.status(400).json({ success: false, errors: errors.array() });
+      return res.status(400).json({ success: false,response:"error", errors: errors.array() });
     }
     const { password, confirm_password } = req.body;
     let user_id = req.params.id;
