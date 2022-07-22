@@ -169,36 +169,38 @@ router.post("/forgotPassword",
           );
           // sgMail.setApiKey(sendGridAPiKey);
           sgMail.setApiKey(process.env.SENDGRID_KEY);
-          console.log(personalData, "personalData");
           const msg = {
             to: "mohammadfakher.fresco@gmail.com",
-            from: fromEmail,
-            subject: "Sending otp",
-            text: "and easy to do anywhere, even with Node.js",
-            html: "<strong>and easy to do anywhere, even with Node.js</strong>",
-            // templateId:forgotPasswordTemplateId,
-            // dynamicTemplateData:{
-            //     subject:"Forgot Password",
-            //     otp:passwordObject.otp
-            // },
+            from: {
+              email: "fakher@frescowebservices.com",
+              // fromEmail,
+              },
+            subject: "Forgot Password",
+            html:
+          '<style>.first{width:100%}</style>'+
+          '<div class="row" style="background-color:#f3f3f3;border: 3px solid #c3c3c3;">'+
+            '<div style="text-align: center;padding:7px;">'+
+              '<h1> Your Otp is: '+passwordObject.otp+ '.</h1>'+
+                
+            '</div>'+
+              
+            
+              '<div class="row col-md-12" style="text-align:center;background-color:#c3c3c3;color:white;height: auto;padding-top: 0px;">'+
+                '<div style="margin-top:6px;margin-bottom:6px;padding-top:6px;padding: 5px;color: black;font-family: -webkit-pictograph;font-size: 14px;font-weight: 600;">'+
+                'Copyright © 2022 LMS , All rights reserved'+
+              '</div>'+
+            '</div>'+
+          
+          '</div>',
           };
 
-          sgMail.send(msg, (err, result) => {
-            if (err) {
-              console.log(err);
-            } else {
-              console.log("Send email to user done!");
-              console.log(result);
-              return res.json({
-                success: true,
+          sgMail.send(msg);
+          res.json({
+            success: true,
                 response: "successful",
-                msg: "Please check your email for OTP verification",
-                data: {
-                  id: user.id,
-                  email: email,
-                },
-              });
-            }
+                msg: "Please check your email for OTP verification.",
+                id: user._id,
+                user_email: email,
           });
         } catch (error) {
           console.error(error.message);
