@@ -20,7 +20,11 @@ const contactUsSchema = new mongoose.Schema({
     feedback:{
         type:String,
         require:true
-    }
+    },
+    date:{
+        type: Date,
+        default: Date.now
+    },
 });
 
 module.exports = ContactUs = mongoose.model('contactUs',contactUsSchema);

@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 
-const DeliverySchema = new mongoose.Schema({
+const BookQuerySchema = new mongoose.Schema({
     user:{
         type:mongoose.Schema.Types.ObjectId,
         ref:'signup'
@@ -9,23 +9,31 @@ const DeliverySchema = new mongoose.Schema({
         type:String,
         require:true
     },
-    address:{
+    email:{
         type:String,
-        require:true
-    },
-    state:{
-        type:String,
-        require:true
-    },
-    city:{
-        type:String,
-        require:true
-    },
-    zipcode:{
-        type:Number,
         require:true
     },
     contact_no:{
+        type:Number,
+        require:true
+    },
+    book_name:{
+        type:String,
+        require:true
+    },
+    book_publisher:{
+        type:String,
+        require:true
+    },
+    book_author:{
+        type:String,
+        require:true
+    },
+    book_edition:{
+        type:String,
+        require:true
+    },
+    book_ISBN:{
         type:Number,
         require:true
     },
@@ -34,4 +42,5 @@ const DeliverySchema = new mongoose.Schema({
         default: Date.now
     },
 });
-module.exports = DeliveryAddress = mongoose.model('userDeliveryAddress',DeliverySchema)
+
+module.exports = BookQuery = mongoose.model('bookQuery',BookQuerySchema)
