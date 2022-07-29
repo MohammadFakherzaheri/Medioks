@@ -18,7 +18,7 @@ const ProductSchema = new mongoose.Schema({
         require:true
     },
     book_author:{
-        type:String,
+        type:[String],
         require:true
     },
     add_publisher:{
@@ -39,13 +39,26 @@ const ProductSchema = new mongoose.Schema({
         type: Date,
         default: Date.now
     },
+    // rating:[{
+    //     user_details:{
+    //         type:String
+    //     },
+    //     Review_message:{
+    //         type:String
+    //     },
+    //     rating_no:{
+    //         type:Number
+    //     }
+    // }],
+
     price:[{
         cureency_type:{
             type:String,
             require:true
         },
         discount:{
-            type:Number
+            type:Number,
+            default:0
         },
         origial_price:{
             type:Number,

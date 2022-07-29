@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 
-const SubCategorySchema = new mongoose.Schema({
+const EquipmentSubCategorySchema = new mongoose.Schema({
     category_id:{
         type:mongoose.Schema.Types.ObjectId,
         ref:'addcategory'
@@ -11,4 +11,4 @@ const SubCategorySchema = new mongoose.Schema({
     }
 });
 
-module.exports = SubCategory = mongoose.model('subcategory',SubCategorySchema)
+module.exports = EquipmentSubCategory = mongoose.model('equipmentsubcategory',EquipmentSubCategorySchema)

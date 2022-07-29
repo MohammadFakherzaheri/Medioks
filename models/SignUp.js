@@ -38,29 +38,31 @@ const SignUpSchema = new mongoose.Schema({
     },
     contact_no:{
         type:Number,
-        required:true
+        
     },
     date_of_brith:{
         type:Date,
-        required:true
+     
     },
     residence_city:{
         type:String,
-        required:true
+   
     },
     college_name:{
         type:String,
-        required:true
+       
     },
     course_name:{
         type:String,
-        required:true
+       
     },
     course_year:{
         type:String,
-        required:true
-    }
-   
+        
+    },
+    updated_at: {
+        type: Date
+      }
 });
 
 module.exports = SignUp = mongoose.model('signup',SignUpSchema)

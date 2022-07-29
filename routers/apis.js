@@ -22,6 +22,10 @@ const BookQuery = require("../models/BookQuery");
 const AddCategory = require("../models/Category");
 const SubCategory = require("../models/SubCategory");
 const AddProduct = require("../models/Product");
+const WishList = require("../models/WishList");
+const RatingProduct = require("../models/Rating");
+const AddToCart = require("../models/Cart");
+const { resolveSoa } = require("dns");
 
 // @Rout POST /api/signUp
 // @desc Register User
@@ -107,13 +111,13 @@ router.post("/login",
       if (!user) {
         return res
           .status(400)
-          .json({ errors: [{ msg: "Invalid credential" }] });
+          .json({ errors: [{success: false, response: "error", msg: "Invalid credential" }] });
       }
       const isMatch = await bcrypt.compare(password, user.password);
       if (!isMatch) {
         return res
           .status(400)
-          .json({ errors: [{ msg: "Invalid credential" }] });
+          .json({ errors: [{success: false, response: "error", msg: "Invalid credential" }] });
       }
 
       //Generate Token
@@ -130,7 +134,7 @@ router.post("/login",
         { expiresIn: 3600000 },
         (err, token) => {
           if (err) throw err;
-          res.json({ token });
+          res.status(200).json({success:true,response:'successful' ,data:token });
         }
       );
     } catch (error) {
@@ -177,39 +181,66 @@ router.post("/forgotPassword",
             { _id: user._id },
             { $set: passwordObject }
           );
-          // sgMail.setApiKey(sendGridAPiKey);
-          sgMail.setApiKey(process.env.SENDGRID_KEY);
-          console.log(personalData, "personalData");
-          const msg = {
-            to: "mohammadfakher.fresco@gmail.com",
-            from: fromEmail,
-            subject: "Sending otp",
-            text: "and easy to do anywhere, even with Node.js",
-            html: "<strong>and easy to do anywhere, even with Node.js</strong>",
-            // templateId:forgotPasswordTemplateId,
-            // dynamicTemplateData:{
-            //     subject:"Forgot Password",
-            //     otp:passwordObject.otp
-            // },
-          };
 
-          sgMail.send(msg, (err, result) => {
-            if (err) {
-              console.log(err);
-            } else {
-              console.log("Send email to user done!");
-              console.log(result);
-              return res.json({
-                success: true,
-                response: "successful",
-                msg: "Please check your email for OTP verification",
-                data: {
-                  id: user.id,
-                  email: email,
-                },
-              });
-            }
+          res
+          .status(200)
+          .json({
+            msg: "Please check your email for OTP verification",
+            success: true,
+            response: "successful",
+            data: {otp:passwordObject.otp,user_id:user._id,email:user.email}
           });
+
+          // sgMail.setApiKey(sendGridAPiKey);
+          // sgMail.setApiKey(process.env.SENDGRID_KEY);
+          // console.log(personalData, "personalData");
+          // const msg = {
+          //   to: "mohammadfakher.fresco@gmail.com",
+          //   from: {
+          //     email: "fakher@frescowebservices.com",
+          //     // fromEmail,
+          //     },
+          //   subject: "Forgot Password",
+          //   html:
+          // '<style>.first{width:100%}</style>'+
+          // '<div class="row" style="background-color:#f3f3f3;border: 3px solid #c3c3c3;">'+
+          //   '<div style="text-align: center;padding:7px;">'+
+          //     '<h1> Your Otp is: '+passwordObject.otp+ '.</h1>'+
+
+          //   '</div>'+
+
+
+          //     '<div class="row col-md-12" style="text-align:center;background-color:#c3c3c3;color:white;height: auto;padding-top: 0px;">'+
+          //       '<div style="margin-top:6px;margin-bottom:6px;padding-top:6px;padding: 5px;color: black;font-family: -webkit-pictograph;font-size: 14px;font-weight: 600;">'+
+          //       'Copyright © 2022 LMS , All rights reserved'+
+          //     '</div>'+
+          //   '</div>'+
+
+          // '</div>',
+          //   // templateId:forgotPasswordTemplateId,
+          //   // dynamicTemplateData:{
+          //   //     subject:"Forgot Password",
+          //   //     otp:passwordObject.otp
+          //   // },
+          // };
+
+          // sgMail.send(msg, (err, result) => {
+          //   if (err) {
+          //     console.log(err);
+          //   } else {
+          //     console.log("Send email to user done!");
+          //     console.log(result);
+          //     return res.json({
+          //       success: true,
+          //       response: "successful",
+          //       msg: "Please check your email for OTP verification",
+          //       data: {
+          //         id: user.id,
+          //         email: email,
+          //       },
+          //     });
+          //   }
+          // });
         } catch (error) {
           console.error(error.message);
           res.status(500).send("Server Error 1");
@@ -232,7 +263,6 @@ router.post("/verifyOtp/:id",
     if (!errors.isEmpty()) {
       return res.status(400).json({ success: false, errors: errors.array() });
     }
-
     const { otp } = req.body;
     let user_id = req.params.id;
     try {
@@ -346,7 +376,6 @@ router.put("/resetPassword/:id/:otptoken",
   ],
   async (req, res) => {
     const errors = validationResult(req);
-    var err = [];
     if (!errors.isEmpty()) {
       return res.status(400).json({ success: false, errors: errors.array() });
     }
@@ -435,10 +464,10 @@ router.put("/resetPassword/:id/:otptoken",
   }
 );
 
-// @route    POST /v1/profile/editProfile
+// @route    PUT /v1/profile/editProfile
 // @desc     Edit the profile of user
 // @access   Private
-router.put("/profile/editProfile",
+router.put("/editProfile",
   [
     auth,
     [
@@ -518,15 +547,15 @@ router.put("/profile/editProfile",
         msg: "Successfully update profile",
       });
     } catch (err) {
-      res.status(500).json({ msg: "Server Error" });
+      res.status(500).json({ success: false, response: "error", msg: "Server error" });
     }
   }
 );
 
-// @route    POST /v1/getProfile
+// @route    Get /v1/getProfile
 // @desc     Show the user detials
 // @access   Private
-router.get("/profile/getProfile",
+router.get("/getProfile",
  auth, async (req, res) => {
   try {
     const userDetials = await SignUp.findById(req.user.id).select("-password");
@@ -535,10 +564,83 @@ router.get("/profile/getProfile",
       .json({ success: true, response: "successful", data: userDetials });
   } catch (err) {
     console.log(err.message);
-    res.status(500).json({ msg: "Server error" });
+    res.status(500).json({ success: false, response: "error", msg: "Server error" });
   }
 });
 
+// @route    Get /v1/getProfile
+// @desc     Show the user detials
+// @access   Private
+router.put('/changePassword',
+[
+  auth,
+  [
+    check("oldPassword",'Password is not correct')
+    .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#\$%\^&\*])(?=.{6,})/),
+    check('newPassword','Please enter your new password')
+    .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#\$%\^&\*])(?=.{6,})/),
+    check('confirmPassword','Please enter confirm password')
+    .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#\$%\^&\*])(?=.{6,})/),
+  ],
+],
+async(req,res)=>{
+  const errors = validationResult(req);
+  if(!errors.isEmpty()){
+    res
+    .status(400)
+    .json({success:false,response:'error',errors:errors.array()})
+  }
+  const {oldPassword,newPassword,confirmPassword} = req.body;
+
+  const user = await SignUp.findOne({_id:req.user.id})
+  const isMatch = await bcrypt.compare(oldPassword,user.password)
+  if(!isMatch){
+    return res.status(400).json({
+      errors: [
+        {
+          success: false,
+          response: "error",
+          param: "oldPassword",
+          msg: "Old password is invalid",
+        },
+      ],
+    });
+  }
+  if(newPassword !== confirmPassword){
+    return res.status(400).json({
+      errors: [
+        {
+          success: false,
+          response: "error",
+          param: "confirm_password",
+          msg: "Confirm password does not matched with new password",
+        },
+      ],
+    });
+  }
+
+  const salt = await bcrypt.genSalt(10);
+
+  const updatePassword = {};
+  if(updatePassword) updatePassword.password = await bcrypt.hash(newPassword, salt);
+  updatePassword.updated_at = new Date();
+
+  try {
+    await SignUp.findOneAndUpdate(
+      {_id:req.user.id},
+      {$set:updatePassword}
+    );
+    res.status(200)
+        .json({
+      success: true,
+      response: "successful",
+      msg: "Password is updated successfully",
+    });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send("Server Error");
+  }
+})
 // @route    POST /v1/deliveryAddress
 // @desc     Add delivery address to the user profile
 // @access   Private
@@ -586,7 +688,7 @@ router.post("/deliveryAddress",
         .json({ success: true, response: "successful", data: deliveryAddress });
     } catch (err) {
       console.log(err.message);
-      res.status(500).json({ msg: "Server Error" });
+      res.status(500).json({ success: false, response: "error", msg: "Server error" });
     }
   }
 );
@@ -617,7 +719,7 @@ router.get("/getDeliveryAddress",
     }
   } catch (err) {
     console.log(err.message);
-    res.status(500).json({ msg: "Server Error" });
+    res.status(500).json({ success: false, response: "error", msg: "Server error" });
   }
 });
 
@@ -628,26 +730,26 @@ router.get("/getDeliveryAddress/:id",
  auth, async (req, res) => {
   const deli_id = req.params.id;
   try {
-    const userDeliveryAddress = await DeliveryAddress.findById(deli_id);
-    res
-      .status(200)
-      .json({
-        success: true,
-        response: "successful",
-        msg: "Data fetched successfully",
-        data: userDeliveryAddress,
-      });
+    const userDeliveryAddress = await DeliveryAddress.findById({id:deli_id});
+      res
+        .status(200)
+        .json({
+          success: true,
+          response: "successful",
+          msg: "Data fetched successfully",
+          data: userDeliveryAddress ,
+        });
   } catch (err) {
     if (err.kind === "ObjectId") {
       res
         .status(404)
         .json({ success: false, response: "error", msg: "Date not found" });
     }
-    res.status(500).json({ msg: "Server Error" });
+    res.status(500).json({ success: false, response: "error", msg: "Server error" });
   }
 });
 
-// @route    POST /v1/contact_us
+// @route    Put /v1/contact_us
 // @desc     Get quiry of users
 // @access   Private
 router.put("/updateDeliveryAddress/:id",
@@ -702,7 +804,7 @@ router.put("/updateDeliveryAddress/:id",
             msg: "Delivery address update successfully",
           });
       } else {
-        res.status(500).json({ msg: "Server Error" });
+        res.status(400).json({ msg: "Data not found" });
       }
     } catch (err) {
       if (err.kind === "ObjectId") {
@@ -719,7 +821,7 @@ router.put("/updateDeliveryAddress/:id",
   }
 );
 
-// @route    DELETE /v1/deleteDeliveryAddres/:id
+// @route    Delete /v1/deleteDeliveryAddres/:id
 // @desc     Delete delivery address by id
 // @access   Private
 router.delete("/deleteDeliveryAddress/:id",
@@ -740,7 +842,7 @@ router.delete("/deleteDeliveryAddress/:id",
         .status(404)
         .json({ success: false, response: "error", msg: "Record not found" });
     }
-    res.status(500).json({ msg: "server error" });
+    res.status(500).json({ success: false, response: "error", msg: "Server error" });
   }
 });
 
@@ -789,7 +891,7 @@ router.post("/contactUs",
         });
     } catch (err) {
       console.log(err.message);
-      res.status(500).json({ msg: "Server Error" });
+      res.status(500).json({ success: false, response: "error", msg: "Server error" });
     }
   }
 );
@@ -877,7 +979,7 @@ router.post("/bookQuery",
         });
     } catch (err) {
       console.log(err.message);
-      res.status(500).json({ msg: "Server Error" });
+      res.status(500).json({ success: false, response: "error", msg: "Server error" });
     }
   }
 );
@@ -918,7 +1020,7 @@ router.post("/addCategory",
         .json({ success: true, response: "successful", data: newCategory });
     } catch (err) {
       console.log(err.message);
-      res.status(500).json({ msg: "Server Error" });
+      res.status(500).json({ success: false, response: "error", msg: "Server error" });
     }
   }
 );
@@ -945,36 +1047,40 @@ router.get("/allCategories",
     }
   } catch (err) {
     console.log(err.message);
-    res.status(500).json({ msg: "Server Error" });
+    res.status(500).json({ success: false, response: "error", msg: "Server error" });
   }
 });
 
 // @router  GET /v1/category/:id
 // @desc    Get category by its id
 // @access  Private
-router.get("/category/:id",
+router.get("/category/:category_id",
  auth, async (req, res) => {
-  const category_id = req.params.id;
+  const category_id = req.params.category_id;
   try {
     const categoryById = await AddCategory.findById(category_id);
+    if(!categoryById){
+      res
+      .status(200)
+      .json({ success: false, response: "error", msg: "Record not found" });
+    }
     res
       .status(200)
       .json({ success: true, response: "successful", data: categoryById });
   } catch (err) {
     if (err.kind === "ObjectId") {
       res
-        .status(404)
+        .status(400)
         .json({ success: false, response: "error", msg: "Record not found" });
     }
-    res.status(500).json({ msg: "Server Error" });
+    res.status(500).json({ success: false, response: "error", msg: "Server error" });
   }
 });
 
 //  @Router  POST/v1/addSubcategory
 //  @desc    Add subcategory alone with category
 //  @access  Private
-router.post(
-  "/addSubcategory",
+router.post("/addSubcategory",
   [
     auth,
     [
@@ -994,6 +1100,11 @@ router.post(
 
     const { sub_categoryName, category_id } = req.body;
     try {
+      let subcategory_id = await SubCategory.findOne({sub_categoryName});
+
+      if(subcategory_id){
+        res.status(400).json({success:false,response:"error",errors:[{msg:'Subcategory already exists'}]})
+      }
       const newSubCategory = new SubCategory({
         category_id,
         sub_categoryName,
@@ -1008,10 +1119,46 @@ router.post(
           data: newSubCategory,
         });
     } catch (err) {
-      res.status(500).json({ msg: "Server Error" });
+      res.status(500).json({ success: false, response: "error", msg: "Server error" });
     }
   }
 );
+
+// @router  GET /v1/getSubcategory/:categoryId
+// @desc    Get all subcategory by the category id
+// @access  Private
+router.get("/allSubCategories",
+ auth, async (req, res) => {
+  try {
+    const AllCategories = await SubCategory.find();
+    if (AllCategories.length > 0) {
+      res
+        .status(200)
+        .json({ success: true, response: "successful", data: AllCategories });
+    } else {
+      return res
+        .status(400)
+        .json({
+          success: false,
+          response: "error",
+          errors: [{ msg: "No record found" }],
+        });
+    }
+  } catch (err) {
+    if (err.kind === "ObjectId") {
+      res
+        .status(404)
+        .json({ success: false, response: "error", msg: "Record not found" });
+    }
+    res
+      .status(500)
+      .json({
+        success: false,
+        response: "error",
+        errors: [{ msg: "Server Error" }],
+      });
+  }
+});
 
 // @router  GET /v1/getSubcategory/:categoryId
 // @desc    Get all subcategory by the category id
@@ -1058,7 +1205,11 @@ router.get("/SubCategories/:subcategory_id",
  auth, async (req, res) => {
   try {
     const AllCategories = await SubCategory.findById(req.params.subcategory_id);
-
+    if(!AllCategories){
+      res
+      .status(200)
+      .json({ success: false, response: "error", msg: "Record not found" });
+    }
     res
       .status(200)
       .json({ success: true, response: "successful", data: AllCategories });
@@ -1068,7 +1219,7 @@ router.get("/SubCategories/:subcategory_id",
         .status(404)
         .json({ success: false, response: "error", msg: "Record not found" });
     }
-    res.status(500).json({ msg: "Server Error" });
+    res.status(500).json({ success: false, response: "error", msg: "Server error" });
   }
 });
 
@@ -1181,7 +1332,7 @@ router.post("/addProduct",
           data: newAddProduct,
         });
     } catch (err) {
-      res.status(500).json({ msg: "Server Error" });
+      res.status(500).json({ success: false, response: "error", msg: "Server error" });
     }
   }
 );
@@ -1189,24 +1340,299 @@ router.post("/addProduct",
 // @router  POST/v1/getProduct
 // @desc    get Product by product id and subcategory id ( for data entering test)
 // @access  Private
-// router.get('/getProduct')
+router.get('/getProduct/:category_id',
+auth,
+async (req,res)=>{
+  try {
+    const subcategory_id = req.query.subcategory_id;
+    const category_id = req.params.category_id;
+    
+      var AllProducts = !subcategory_id ? 
+        await AddProduct.find({category_id:category_id})
+        :await AddProduct.find({category_id:category_id,subcategory_id:subcategory_id}); 
+        if(!AllProducts){
+          res
+          .status(200)
+          .json({ success: false, response: "error", msg: "Record not found" });
+        }
+      res
+      .status(200)
+      .json({ success: true, response: "successful", data:AllProducts });
+  } 
+  catch (err) {
+    console.log(err.message)
+    if (err.kind === "ObjectId") {
+      res
+        .status(404)
+        .json({ success: false, response: "error", msg: "Record not found" });
+    }
+    res.status(500).json({ success: false, response: "error", msg: "Server error" });  
+  }
+})
 
+// @router  Get/v1/getProductSingle/:product_id
+// @desc    get the single product with its details
+// @access  Private
+router.get('/getProductSingle/:product_id',
+auth,
+async (req,res)=>{
+  try {
+   
+    const product_id = req.params.product_id;
+    
+      var AllProducts = await AddProduct.findOne({_id:product_id});
+      var rating = await RatingProduct.findOne({product_id:product_id});
+      res
+      .status(200)
+      .json({ success: true, response: "successful", data:{AllProducts,rating} });
+  } 
+  catch (err) {
+    console.log(err.message)
+    if (err.kind === "ObjectId") {
+      res
+        .status(404)
+        .json({ success: false, response: "error", msg: "Record not found" });
+    }
+    res.status(500).json({ success: false, response: "error", msg: "Server error" });  
+  }
+})
 
+// @router  POST/v1/addWishlist
+// @desc    Add to which list for storing the product for later 
+// @access  Private
+router.post('/wishList',
+[auth,[
+  check("product","product ID is required").trim().not().isEmpty()
+]],
+async(req,res)=>{
+  const errors =validationResult(req);
+  if(!errors.isEmpty()){
+    res
+        .status(400)
+        .json({ success: false, response: "error", errors: errors.array() });
+  }
+  const {product} = req.body;
+  const user_id = req.user.id;
+  try {
+    const newWishList = new WishList({
+      user_detail:user_id,
+      product
+    });
+    await newWishList.save();
+    res.status(200).json({success:true,response:"successful",msg:"Product has been successfully added in wishlist", data:newWishList})
+  } catch (err) {
+    res.status(500).json({success:false,response:"error",error:[{msg:"Server error"}]})
+  }
+});
 
+// @router  GET/v1/getAllWishList
+// @desc    Get all wishlist
+// @access  Private
+router.get('/getAllWishList',
+auth,
+async(req,res)=>{
+  try {
+    const getWishlists = await WishList.find().populate({path:"product",select:["book_name","book_author","price.origial_price","price.sale_price"]})
+    // .populate("product") instade of this method i user aggregation method
+    //.aggregate([{$project:{product:{"book_name":1,"book_author":1}}}]);
+    console.log(getWishlists.length,'getWishlists');
+    if(getWishlists && getWishlists.length > 0){
+      res.status(200).json({success:true,response:"successful",msg:"Data fetched successfully",data:getWishlists})
+    }
+    res.status(400).json({success:false,response:"error",errors:[{msg:"No record found"}]}) 
+  } catch (err) {
+    res.status(500).json({success:false,response:"error",errors:[{msg:"server error"}]}) 
+  }
+})
 
+// @router  GET/v1/getWishlists
+// @desc    Get all wishlist by specifice Product id
+// @access  Private
+router.get('/getWishList/:wishlist_id',
+auth,
+async(req,res)=>{
+  const wishlist_id = req.params.wishlist_id;
+  try {
+    const getWishlist = await  WishList.find({wishlist_id:wishlist_id}).populate({path:"product",select:["book_name","book_author","price.origial_price","price.sale_price"]});
+      res.status(200).json({success:true,response:"successful",msg:"Data fetched successfully",data:getWishlist})
+  } catch (err) {
+    res.status(500).json({success:false,response:"error",errors:[{msg:"server error"}]}) 
+  }
+})
 
+// @router  Delete/v1/deleteWishList/:id
+// @desc    Remove the wish list by its Id
+// @access  Private
+router.delete('/deleteWishList/:wishlist_id',
+auth,
+async(req,res)=>{
+  const wishlist_id = req.params.wishlist_id;
+  try {
+    await WishList.findByIdAndDelete(wishlist_id);
+    res
+      .status(200)
+      .json({
+        success: true,
+        response: "successful",
+        msg: "Record deleted successfully",
+      });
+  } catch (err) {
+    res.status(500).json({success:false,response:"error",errors:[{msg:"server error"}]}) 
+  }
+})
 
+// @router  Post/v1/deleteWishList/:id
+// @desc    Remove the wish list by its Id
+// @access  Private
+router.post('/ratingProduct/:product_id',
+auth,
+async(req,res)=>{
+    const product_id = req.params.product_id;
+    const user_id = req.user.id;
+     const {rating_no,review} = req.body
+     try {
 
+      const newRating = new RatingProduct({
+        user_id:user_id,
+        product_id:product_id,
+        review,
+        rating_no
+      });
+      await newRating.save();
+    // product_Rating.ratings.unshift({user:req.user.id});
+    res.status(200)
+    .json({
+      success: true,
+      response: "successful",
+      msg: "Record added successfully",
+      data:newRating
+    });
+  } catch (err) {
+    console.error(err)
+    res.status(500).json({success:false,response:"error",errors:[{msg:"server error"}]}) 
+  }
+})
 
+// @router  Post/v1/addToCart/:Product_id
+// @desc    Add a product by its ID to cart
+// @access  Private
+router.post('/addToCart/:Product_id',
+auth,
+async(req,res)=>{
+    const user_id = req.user.id;
+    const product_id= req.params.Product_id;
 
+    const {quantity} = req.body;
+    try {
+      const oldProduct = await AddToCart.findOne({product_id:product_id})
+      if(oldProduct){
+        res.status(200)
+        .json({
+          success: false,
+          response: "error",
+          msg: "Record added already",
+        });
+      }
+      const newCart = new AddToCart({
+        user_detail:user_id,
+        product:product_id,
+        quantity
+      })
+      await newCart.save();
+      res.status(200)
+      .json({
+        success: true,
+        response: "successful",
+        msg: "Record added successfully",
+        data:newCart
+      });
+    } catch (err) {
+      console.error(err)
+      res.status(500).json({success:false,response:"error",errors:[{msg:"server error"}]}) 
+    }
+});
 
+// @router  Get/v1/getMyCart
+// @desc    Show all list of product which is in cart db
+// @access  Private
+router.get('/getMyCart',
+auth,
+async(req,res)=>{
+  try {
+    const allCartList = await AddToCart.find().populate({path:'product',select:["book_name","book_author","price.origial_price","price.sale_price"]});
+    if(allCartList.length > 0){
+      res.status(200).json({success:true,response:"successful",msg:"Data fetched successfully",data:allCartList})
+    }
+    res.json({
+      success: false,
+      status: 0,
+      response: "error",
+      msg: "No record found",
+    });
 
+  } catch (err) {
+    res.status(500).json({success:false,response:"error",errors:[{msg:"server error"}]}) 
+  }
+});
 
+// @router  Put/v1/updateCartProduct/:Product_id
+// @desc    Update the quantity of the product
+// @access  Private
+router.put('/updateCartProduct/:product_id',
+auth,
+async(req,res)=>{
+  const product_id = req.params.product_id;
+  const {quantity} = req.body;
+  const newQuantity = {}
+  if(quantity) newQuantity.quantity = quantity;
+  try {
+    if(newQuantity){
+      await AddToCart.findOneAndUpdate(product_id,
+        {$set:newQuantity},
+        {new:true}
+        );
+        res
+        .status(200)
+        .json({
+          success: true,
+          response: "successful",
+          msg: "Data updated successfully",
+        });
+      }else{
+        res.status(400).json({ msg: "Data not found" });
+      }
+  } catch (err) {
+    res.status(500).json({success:false,response:"error",errors:[{msg:"server error"}]}) 
+  }
+});
 
+// @router  Delete/v1/deleteCartProduct/:cart_id
+// @desc    Delete the quantity of the product
+// @access  Private
+router.delete('/deleteCartProduct/:id',
+auth,
+async(req,res)=>{
+  try {
+    const cart_id= req.params.id;
+    await AddToCart.findByIdAndRemove(cart_id);
+    res
+    .status(200)
+    .json({
+      success: true,
+      response: "successful",
+      msg: "Record deleted successfully",
+    });
+  } catch (err) {
+    console.log(err.message);
 
-
-
-
+    if(err.kind === "ObjectId" ){
+      res
+        .status(404)
+        .json({ success: false, response: "error", msg: "Record not found" });
+    }
+    res.status(500).json({success:false,response:"error",errors:[{msg:"server error"}]});
+  }
+})
 
 
 
